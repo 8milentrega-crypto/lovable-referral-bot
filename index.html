@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lovable Bot">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <title>🚀 Lovable Referral Bot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary: #e94560;
+            --primary-dark: #c73e54;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --bg-dark: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+            --text-muted: #888888;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: var(--text);
+            padding: 15px;
+            padding-bottom: 100px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-top: 10px;
+        }
+        
+        h1 {
+            font-size: 1.8em;
+            background: linear-gradient(90deg, var(--primary), #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text);
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+        }
+        
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+        
+        textarea {
+            height: 150px;
+            resize: none;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .help-text {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, var(--primary), #ff6b6b);
+            color: white;
+        }
+        
+        .btn-start:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-start:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        
+        .btn-stop {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--error);
+            border: 2px solid var(--error);
+        }
+        
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-box .number {
+            font-size: 2em;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .stat-box .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-box.processed .number { color: var(--info); }
+        .stat-box.success .number { color: var(--success); }
+        .stat-box.failed .number { color: var(--error); }
+        .stat-box.total .number { color: var(--warning); }
+        
+        .current-account {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .current-account .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .current-account.idle .dot {
+            background: var(--text-muted);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
+        
+        .log-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .log-entry {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 0.85em;
+            line-height: 1.4;
+            border-left: 3px solid var(--text-muted);
+        }
+        
+        .log-entry.success { border-left-color: var(--success); background: rgba(46, 204, 113, 0.1); }
+        .log-entry.error { border-left-color: var(--error); background: rgba(231, 76, 60, 0.1); }
+        .log-entry.warning { border-left-color: var(--warning); }
+        .log-entry.processing { border-left-color: var(--info); }
+        .log-entry.complete { border-left-color: #9b59b6; background: rgba(155, 89, 182, 0.1); }
+        
+        .log-time {
+            color: var(--text-muted);
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 15px 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+        
+        .install-prompt.show {
+            display: flex;
+        }
+        
+        .install-prompt button {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 400px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.5em; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-box .number { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Lovable Bot</h1>
+            <p class="subtitle">Automação de Referral</p>
+        </header>
+        
+        <div class="card">
+            <div class="card-title">⚙️ Configuração</div>
+            
+            <label for="referral">Link de Referral</label>
+            <input type="text" id="referral" placeholder="https://lovable.dev/invite/XXXXXXX">
+            <p class="help-text">Cole seu link de convite do Lovable</p>
+            
+            <label for="accounts">Contas (email:senha)</label>
+            <textarea id="accounts" placeholder="email1@outlook.com:senha123
+email2@outlook.com:senha456
+email3@outlook.com:senha789"></textarea>
+            <p class="help-text">Uma conta por linha • Formatos: email:senha ou email senha</p>
+            
+            <div class="btn-group">
+                <button class="btn-start" id="btnStart" onclick="startBot()">
+                    ▶️ Iniciar
+                </button>
+                <button class="btn-stop" id="btnStop" onclick="stopBot()" disabled>
+                    ⏹️ Parar
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">📊 Status</div>
+            
+            <div class="progress-bar">
+                <div class="fill" id="progressBar" style="width: 0%"></div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box processed">
+                    <div class="number" id="statProcessed">0</div>
+                    <div class="label">Processadas</div>
+                </div>
+                <div class="stat-box success">
+                    <div class="number" id="statSuccess">0</div>
+                    <div class="label">Sucesso</div>
+                </div>
+                <div class="stat-box failed">
+                    <div class="number" id="statFailed">0</div>
+                    <div class="label">Falhas</div>
+                </div>
+                <div class="stat-box total">
+                    <div class="number" id="statTotal">0</div>
+                    <div class="label">Total</div>
+                </div>
+            </div>
+            
+            <div class="current-account idle" id="currentAccount">
+                <div class="dot"></div>
+                <span id="currentEmail">Aguardando...</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">📝 Logs</div>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    Pronto para iniciar...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="install-prompt" id="installPrompt">
+        <span>📱 Instalar como App?</span>
+        <button class="btn-start" onclick="installApp()">Instalar</button>
+    </div>
+    
+    <script>
+        const socket = io();
+        let isRunning = false;
+        let deferredPrompt;
+        
+        // PWA Install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.add('show');
+        });
+        
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((result) => {
+                    document.getElementById('installPrompt').classList.remove('show');
+                    deferredPrompt = null;
+                });
+            }
+        }
+        
+        // Socket events
+        socket.on('log', function(data) {
+            addLogEntry(data);
+        });
+        
+        socket.on('status_update', function(data) {
+            updateStats(data);
+        });
+        
+        function updateStats(data) {
+            document.getElementById('statProcessed').textContent = data.processed;
+            document.getElementById('statSuccess').textContent = data.success;
+            document.getElementById('statFailed').textContent = data.failed;
+            document.getElementById('statTotal').textContent = data.total;
+            
+            const currentAccount = document.getElementById('currentAccount');
+            const currentEmail = document.getElementById('currentEmail');
+            
+            if (data.current) {
+                currentAccount.classList.remove('idle');
+                currentEmail.textContent = data.current;
+            } else {
+                currentAccount.classList.add('idle');
+                currentEmail.textContent = data.running ? 'Processando...' : 'Aguardando...';
+            }
+            
+            // Update progress bar
+            const progress = data.total > 0 ? (data.processed / data.total) * 100 : 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update buttons
+            isRunning = data.running;
+            document.getElementById('btnStart').disabled = isRunning;
+            document.getElementById('btnStop').disabled = !isRunning;
+        }
+        
+        function addLogEntry(log) {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${log.status}`;
+            entry.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            // Keep only last 50 entries in DOM
+            while (container.children.length > 50) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        async function startBot() {
+            const referral = document.getElementById('referral').value.trim();
+            const accounts = document.getElementById('accounts').value.trim();
+            
+            if (!referral) {
+                alert('⚠️ Insira o link de referral!');
+                return;
+            }
+            
+            if (!accounts) {
+                alert('⚠️ Insira as contas!');
+                return;
+            }
+            
+            // Clear logs
+            document.getElementById('logContainer').innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        accounts: accounts,
+                        referral_link: referral,
+                        headless: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('❌ ' + data.error);
+                    return;
+                }
+                
+                isRunning = true;
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = false;
+                
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+        
+        async function stopBot() {
+            try {
+                await fetch('/api/stop', {method: 'POST'});
+                isRunning = false;
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+        
+        // Load initial status
+        fetch('/api/status').then(r => r.json()).then(updateStats);
+        
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+</html>
